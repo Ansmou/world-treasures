@@ -121,6 +121,7 @@
   <div id="modeBtns">
     <button class="mbtn on" id="mExplore">🔎 Explore</button>
     <button class="mbtn" id="mMissions">🎯 Missions</button>
+    <button class="mbtn" id="mPak">🇵🇰 Pakistan</button>
     <button class="mbtn" id="mAtlas">📖 Atlas</button>
   </div>
 
@@ -139,7 +140,8 @@
   </div>
 
   <div id="atlasOv">
-    <div id="atlasCard">
+    <div id="atlasCard" style="position:relative">
+      <button id="atlasX" style="position:absolute;top:10px;right:10px;border:2px solid #9cc4d4;background:#fff;border-radius:10px;font-weight:800;font-size:.9rem;padding:2px 9px;cursor:pointer;font-family:inherit;color:#28516b">✕</button>
       <h1>📖 My Atlas</h1>
       <div class="pct" id="atlasPct"></div>
       <div class="sect">Treasures discovered</div>
@@ -156,7 +158,9 @@
       <p>Every country hides treasures — oil, gold, coffee, diamonds, sunshine!<br><b>Tap any country</b> to learn what it gives the world.</p>
       <p>🔎 <b>Explore</b> — collect treasures in your Atlas 📖<br>🎯 <b>Missions</b> — help countries find the treasures they need and win 🪙</p>
       <p>Can you light up the whole atlas? 🌟</p>
-      <button id="btnStart">▶ START EXPLORING</button>
+      <p><b>Where first?</b></p>
+      <button id="btnStartW" style="margin:4px">🌍 Whole world</button>
+      <button id="btnStartP" style="margin:4px">🇵🇰 Pakistan trade map</button>
     </div>
   </div>
 
@@ -184,7 +188,7 @@ function el(tag,attrs,parent){const n=document.createElementNS(SVGNS,tag);for(co
 /* ---------------- resources ---------------- */
 const RES={
   oil:{n:'Oil',e:'🛢️',why:'Black gold from deep underground — it powers cars and planes, and even makes plastic!'},
-  gas:{n:'Natural Gas',e:'🔥',why:'Clean-belling fuel that cooks food and warms homes in winter.'},
+  gas:{n:'Natural Gas',e:'🔥',why:'Clean-burning fuel that cooks food and warms homes in winter.'},
   coal:{n:'Coal',e:'🪨',why:'A fuel made from forests that lived 300 million years ago!'},
   uranium:{n:'Uranium',e:'⚛️',why:'A tiny pellet of it can power a whole city — in special power plants.'},
   sun:{n:'Sunshine',e:'☀️',why:'Deserts collect free sunshine and turn it into electricity!'},
@@ -203,6 +207,10 @@ const RES={
   water:{n:'Fresh Water',e:'💧',why:'The most precious treasure of all — we drink it and grow crops with it.'},
   silver:{n:'Silver',e:'🥈',why:'Shiny metal for jewellery, mirrors and electronics.'},
   wool:{n:'Wool',e:'🐑',why:'Warm winter clothes begin as fluffy sheep coats!'},
+  cotton:{n:'Cotton',e:'👕',why:'Fluffy balls that become your T-shirts, jeans and towels.'},
+  salt:{n:'Pink Salt',e:'🧂',why:'Rock salt from ancient seas — pink mountains of flavour!'},
+  tea:{n:'Tea',e:'🍵',why:'Leaves picked on misty hills — Pakistan’s favourite drink!'},
+  mango:{n:'Mangoes',e:'🥭',why:'The king of fruits — sweet, juicy, summer’s best gift.'},
 };
 
 /* ---------------- countries (picture-book pods) ---------------- */
@@ -234,8 +242,11 @@ const C=[
  {id:'southafrica',n:'South Africa',f:'🇿🇦',x:528,y:372,r:15,cont:'Africa',res:['gold','diamonds'],fact:'Almost HALF of all gold ever mined came out of South African mines!'},
  {id:'botswana',n:'Botswana',f:'🇧🇼',x:510,y:352,r:12,cont:'Africa',res:['diamonds'],fact:'Botswana\u2019s diamonds pay for school and doctors — a poor land that struck it rich!'},
  {id:'morocco',n:'Morocco',f:'🇲🇦',x:432,y:190,r:12,cont:'Africa',res:['fish'],fact:'Morocco\u2019s Atlantic coast is so windy that kitesurfers fly without waves!'},
- {id:'india',n:'India',f:'🇮🇳',x:668,y:222,r:20,cont:'Asia',res:['rice','wheat','iron'],fact:'India grows rice the clever way — terraces step down whole mountains!'},
+ {id:'india',n:'India',f:'🇮🇳',x:680,y:230,r:19,cont:'Asia',res:['rice','wheat','iron'],fact:'India grows rice the clever way — terraces step down whole mountains!'},
  {id:'china',n:'China',f:'🇨🇳',x:730,y:172,r:24,cont:'Asia',res:['rice','gold','wheat'],fact:'China feeds 1 in 5 humans with just 1 in 12 of the world\u2019s farmland!'},
+ {id:'pakistan',n:'Pakistan',f:'🇵🇰',x:645,y:200,r:13,cont:'Asia',res:['rice','cotton','salt','mango'],fact:'Sialkot in Pakistan hand-sews the footballs for the World Cup!'},
+ {id:'uae',n:'UAE',f:'🇦🇪',x:600,y:240,r:8,cont:'Asia',res:['oil','gas','sun'],fact:'Dubai built the world\u2019s tallest tower with oil money — now welcomes the world!'},
+ {id:'kenya',n:'Kenya',f:'🇰🇪',x:558,y:310,r:11,cont:'Africa',res:['tea','fish'],fact:'Kenya\u2019s tea travels 6,000 km by ship to fill Pakistan\u2019s cups!'},
  {id:'thailand',n:'Thailand',f:'🇹🇭',x:742,y:250,r:13,cont:'Asia',res:['rice','rubber'],fact:'Thai farmers march ducks into rice fields — the ducks eat pests for lunch!'},
  {id:'vietnam',n:'Vietnam',f:'🇻🇳',x:762,y:242,r:12,cont:'Asia',res:['coffee','rice'],fact:'Vietnam is coffee world champion #2 — famous for smooth, chocolatey beans!'},
  {id:'malaysia',n:'Malaysia',f:'🇲🇾',x:745,y:275,r:12,cont:'Asia',res:['rubber'],fact:'Rubber trees originally lived ONLY in Brazil — seeds were smuggled to Asia in 1876!'},
@@ -244,6 +255,32 @@ const C=[
  {id:'australia',n:'Australia',f:'🇦🇺',x:820,y:330,r:22,cont:'Oceania',res:['iron','lithium','gold'],fact:'The outback is RED because the dust is full of iron — Australia ships it to build the world!'},
  {id:'newzealand',n:'New Zealand',f:'🇳🇿',x:895,y:395,r:12,cont:'Oceania',res:['wool','fish'],fact:'New Zealand has more SHEEP than people — about five each!'},
 ];
+const TRADE={
+  wheat:{ukraine:[1,'Next door to Europe — a short truck ride!'],russia:[3,'Huge fields, but relations with Europe are tense right now — many buyers look elsewhere.'],canada:[2,'Safe and steady — but an ocean away, so ships must cross the Atlantic.'],argentina:[2,'Long voyage around the tropics.'],china:[2,'Grows a lot but eats a lot too!'],india:[2,'Big grower next door to Asia.'],pakistan:[2,'Basmati rice country grows wheat in Punjab too.'],australia:[2,'Very far — long sail to Asia.']},
+  oil:{saudi:[1,'Giant fields + giant tankers = cheapest barrels in the world.'],usa:[2,'Lots of oil, but Americans use most of it themselves.'],russia:[3,'Sanctions (money punishments) make many banks afraid to pay for it.'],nigeria:[2,'Pipelines sometimes leak, making it pricier.'],mexico:[2,'Sells most next door to the USA.'],uae:[1,'Gulf seller with easy payment terms for friends.'],canada:[2,'Sticky "oil sands" are costly to clean.']},
+  gas:{qatar:[1,'Freezes gas into liquid and ships it anywhere by tanker!'],norway:[2,'Pipes under the North Sea straight to Europe.'],algeria:[1,'Pipes under the Mediterranean to Europe.'],russia:[3,'Europe closed the pipelines — now buys from Qatar instead!'],usa:[2,'Ships LNG across the ocean.'],nigeria:[2,'Niger delta gas is far from ports.'],iran:[3,'Has huge gas, but payments to Iran are blocked — trade stays small.'],egypt:[2,'Found big gas under the sea.']},
+  copper:{chile:[1,'Giant open-pit mines — world champion!'],peru:[1,'Mountain mines next door to Chile.'],drc:[2,'Rich ground but few roads and ports.'],australia:[2,'Far from the world’s factories.'],china:[2,'Uses nearly all it digs.'],pakistan:[2,'Reko Diq mine is being built — big future!']},
+  coffee:{brazil:[1,'Endless farms — world’s coffee king.'],vietnam:[1,'Number 2 — smooth and chocolatey.'],colombia:[1,'High mountains = fancy beans.'],ethiopia:[2,'Land-locked: no coast, so ships must cross neighbours first.'],india:[2,'Grows tea more than coffee.'],kenya:[2,'Highland beans, but long sail to Europe.']},
+  cocoa:{cotedivoire:[1,'Every third chocolate bar starts here!'],ghana:[1,'Number 2 — cocoa is their treasure.'],indonesia:[2,'Grows more palm oil than cocoa.']},
+  lithium:{australia:[1,'Digs hard-rock lithium — fast and steady.'],chile:[1,'Evaporates salty lake water under the desert sun!'],argentina:[1,'Third corner of the Lithium Triangle.'],china:[2,'Makes most batteries — needs imports too.']},
+  rice:{china:[1,'Feeds 1 in 5 humans.'],india:[1,'Basmati king — exports to the whole world.'],thailand:[1,'Jasmine rice by the boatload.'],vietnam:[1,'Mekong delta = rice bowl of Asia.'],pakistan:[1,'Basmati rival! Ships from Karachi port.'],indonesia:[2,'Eats most of its own rice.']},
+  diamonds:{botswana:[1,'Diamonds pay for schools here!'],southafrica:[1,'Deep historic mines.'],drc:[2,'Digging is hard and roads are few.'],russia:[3,'Sanctions — many jewellers avoid Russian stones.']},
+  iron:{australia:[1,'Ships more iron than everyone — trains 2km long!'],brazil:[2,'Carajas mine in the jungle.'],russia:[3,'Sanctions again.'],india:[2,'Uses most at home.'],china:[2,'Buys more than it sells.'],ukraine:[2,'War closed ports — steel waits in yards.']},
+  gold:{china:[1,'Digs and keeps the most.'],australia:[1,'Big mines in the outback.'],russia:[3,'Sanctions.'],southafrica:[2,'Deepest mines on Earth — 4km down!'],ghana:[1,'Africa’s gold champion.'],uzbekistan:[2,'One giant open-pit mine.']},
+  uranium:{kazakhstan:[1,'World leader — dug from the steppe.'],canada:[1,'High-grade northern mines.'],australia:[2,'Huge reserves, far away.']},
+  fish:{norway:[1,'Cold, clean fjords = perfect salmon.'],peru:[1,'Cold currents feed giant anchovy schools.'],morocco:[1,'Rich Atlantic coast.'],indonesia:[1,'17,000 islands of fishing.'],japan:[2,'Eats almost all it catches!'],kenya:[2,'Indian Ocean catch, small boats.']},
+  rubber:{malaysia:[1,'Rubber tree farms everywhere.'],thailand:[1,'World’s biggest rubber seller.'],indonesia:[1,'Number 2 — jungle plantations.']},
+  coal:{indonesia:[1,'Short sail to Asian power stations.'],russia:[3,'Sanctions.'],usa:[2,'Far from Asia.'],australia:[2,'Long sail but reliable.']},
+  silver:{mexico:[1,'Silver country since the pirates!'],peru:[1,'Number 2, dug with copper.'],china:[2,'Uses most at home.']},
+  wool:{newzealand:[1,'Ten sheep for every person!'],uk:[2,'Small islands, fancy wool.'],turkey:[1,'Anatolian shepherds.'],australia:[1,'Merino champions.']},
+  water:{canada:[1,'A fifth of Earth’s fresh water in its lakes!']},
+  cotton:{pakistan:[1,'Cotton country — your T-shirt may have grown in Sindh!'],china:[1,'Grows and weaves the most.'],india:[2,'Big fields next door.'],usa:[2,'Machine-picked and shipped far.'],brazil:[1,'Sunny giant farms.']},
+  salt:{pakistan:[1,'Khewra mines make world-famous PINK salt!']},
+  tea:{kenya:[1,'Pakistan’s cuppa — biggest tea seller to Pakistan!'],india:[1,'Assam hills next door.'],china:[1,'Tea’s birthplace.'],vietnam:[2,'Growing fast.'],indonesia:[2,'Java gardens.']},
+  mango:{pakistan:[1,'Chaunsa + Sindhri = sweetest in the world (say Pakistanis!)'],india:[1,'Mango rival next door.'],mexico:[2,'Sails far to the USA.'],brazil:[2,'Sweet but a long voyage.']},
+  sun:{saudi:[1,'Empty quarter desert = perfect solar sea!'],egypt:[2,'Desert sun by the Nile.'],australia:[1,'Sunniest continent.'],ukraine:[1,'Sunflower fields double as solar farms!']},
+  wind:{uk:[1,'Windy North Sea turbines.'],france:[2,'Atlantic coast farms.'],netherlands:[1,'The land of windmills!'],norway:[2,'Mountain winds.']},
+};
 const CONT_COL={'North America':'#a8d86f','South America':'#ffd98f','Europe':'#f2a8c0','Africa':'#f2b06a','Asia':'#9fd8d2','Oceania':'#c9b3e8','Europe & Asia':'#9fd8d2'};
 
 /* ---------------- state ---------------- */
@@ -291,11 +328,12 @@ const LANDS=[
  ['Africa','M420 175 Q480 155 540 175 Q575 190 585 225 Q605 260 580 295 Q575 340 545 370 Q520 400 490 385 Q455 380 440 350 Q405 320 415 280 Q395 235 420 175 Z','#ffc98a'],
  ['Australia','M770 300 Q830 285 880 310 Q910 335 885 360 Q860 390 815 385 Q770 385 755 355 Q745 325 770 300 Z','#d8c3f0'],
 ];
-LANDS.forEach(([id,d,col])=>el('path',{d,class:'land',fill:col},svg));
+const landNodes=LANDS.map(([id,d,col])=>el('path',{d,class:'land',fill:col},svg));
 /* ocean waves */
+const waves=[];
 for(let i=0;i<16;i++){
   const x=30+R()*940,y=30+R()*480;
-  if(y>60&&y<470&&R()<.6)el('path',{d:`M${x} ${y} q8 -5 16 0 q8 5 16 0`,class:'wave'},svg);
+  if(y>60&&y<470&&R()<.6)waves.push(el('path',{d:`M${x} ${y} q8 -5 16 0 q8 5 16 0`,class:'wave'},svg));
 }
 /* country pods */
 const pods={};
@@ -341,6 +379,8 @@ function showCard(c){
   });
   $('cFact').textContent='✨ '+c.fact;
   $('cWhy').innerHTML=c.res.map(r=>`<b>${RES[r].n}</b>: ${RES[r].why}`).join('<br>');
+  const tn=(TRADE[c.res[0]]||{})[c.id];
+  if(tn)$('cFact').textContent='💼 Trade: '+tn[1];
   $('card').classList.add('show');
   if(!S.visited[c.id]){
     S.visited[c.id]=true;
@@ -391,12 +431,25 @@ function missionTap(c){
   const m=S.mission;
   const ok=c.res.includes(m.res);
   if(ok){
-    S.coins+=5;S.missions++;
+    const deal=(TRADE[m.res]||{})[c.id];
+    const entries=Object.entries(TRADE[m.res]||{});
+    const bestCost=entries.length?Math.min(...entries.map(v=>v[1][0])):1;
+    let coins=5,lesson='';
+    if(deal){
+      const isBest=deal[0]===bestCost;
+      if(isBest){coins+=3;lesson=`⭐ <b>BEST DEAL! +3 bonus</b> — ${deal[1]}`;}
+      else{
+        const bestId=entries.find(([id,v])=>v[0]===bestCost);
+        const bc=bestId?C.find(x=>x.id===bestId[0]):null;
+        lesson=`💡 Delivered — but there was a <b>better deal</b>: ${bc?bc.f+' '+bc.n:''} — ${bestId?bestId[1][1]:''}<br><b>Why yours cost more:</b> ${deal[1]}`;
+      }
+    }
+    S.coins+=coins;S.missions++;
     save();updHud();
     flyPlane(c,m.who,()=>{
       sRight();sCoin();
       $('rTitle').textContent='Delivered! 🎉';
-      $('rText').innerHTML=`${c.f} <b>${c.n}</b> → ${m.who}<br>${RES[m.res].e} ${RES[m.res].n} delivered!<br>+🪙 5 · missions: ${S.missions} · rank: ${rank()}`;
+      $('rText').innerHTML=`${c.f} <b>${c.n}</b> → ${m.who}<br>${RES[m.res].e} ${RES[m.res].n} delivered! +🪙 ${coins}<br>${lesson}<br>Missions: ${S.missions} · rank: ${rank()}`;
       $('resOv').classList.add('show');
       S.mission=null;
       $('mission').classList.remove('show');
@@ -420,7 +473,8 @@ function missionTap(c){
   }
 }
 function shakePod(id){
-  const g=pods[id];
+  const g=pods[id]||pakPods[id.replace('pak-','')];
+  if(!g)return;
   g.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:250});
 }
 $('rNext').addEventListener('click',()=>{
@@ -455,6 +509,148 @@ function flyPlane(c,whoEmoji,done){
   },30);
 }
 
+/* ---------------- PAKISTAN regional map ---------------- */
+const PAK_PODS=[
+ {id:'islamabad',n:'Islamabad',e:'🏛️',x:455,y:130,r:13,city:true,cont:'Pakistan',res:[],fact:'The capital, sitting under the green Margalla Hills.'},
+ {id:'hunza',n:'Hunza Valley',e:'💎',x:470,y:88,r:13,city:true,cont:'Gilgit-Baltistan',res:['diamonds'],fact:'Mountain valleys where rubies and topaz peek out of the rocks!'},
+ {id:'sialkot',n:'Sialkot',e:'⚽',x:520,y:172,r:14,city:true,cont:'Punjab',res:[],fact:'Hand-stitches millions of footballs — World Cup balls come from here! Also surgical tools.'},
+ {id:'khewra',n:'Khewra Mine',e:'🧂',x:448,y:168,r:12,city:true,cont:'Punjab',res:['salt'],fact:'A whole mountain of PINK salt — with mosque walls carved from salt!'},
+ {id:'multan',n:'Multan',e:'🥭',x:438,y:238,r:14,city:true,cont:'Punjab',res:['mango'],fact:'City of saints and MANGOES — Chaunsa and Sindhri sweeten the summer!'},
+ {id:'rekodiq',n:'Reko Diq',e:'⛰️',x:330,y:300,r:13,city:true,cont:'Balochistan',res:['copper','gold'],fact:'One of the world\u2019s biggest copper-gold spots — being dug right now!'},
+ {id:'karachi',n:'Karachi Port',e:'🛳️',x:395,y:345,r:16,city:true,cont:'Sindh',res:['rice'],fact:'Pakistan\u2019s front door — almost all sea trade sails from this port!'},
+ {id:'punjab',n:'Punjab fields',e:'🌾',x:480,y:205,r:15,city:true,cont:'Punjab',res:['wheat','cotton'],fact:'Canal-fed fields grow wheat AND cotton — Pakistan\u2019s breadbasket.'},
+ {id:'p_china',n:'China',e:'🇨🇳',x:660,y:120,r:20,cont:'Best friend 🤝',res:[],fact:'Pakistan\u2019s biggest trade friend — the Karakoram Highway climbs the mountains to connect us!'},
+ {id:'p_india',n:'India',e:'🇮🇳',x:660,y:250,r:19,cont:'Tricky 🚧',res:[],fact:'Right next door — but relations are hard, so very little trade crosses the border.'},
+ {id:'p_iran',n:'Iran',e:'🇮🇷',x:280,y:210,r:16,cont:'Neighbour',res:[],fact:'A neighbour with huge gas — but payments are blocked, so trade stays small.'},
+ {id:'p_afg',n:'Afghanistan',e:'🇦🇫',x:390,y:105,r:15,cont:'Neighbour',res:[],fact:'Trucks climb the famous Khyber Pass carrying goods next door.'},
+ {id:'p_saudi',n:'Saudi Arabia',e:'🇸🇦',x:235,y:300,r:17,cont:'Oil friend 🤝',res:['oil'],fact:'Friendly oil seller — often gives Pakistan easy, delayed payments!'},
+ {id:'p_uae',n:'UAE',e:'🇦🇪',x:268,y:345,r:12,cont:'Gulf friend 🤝',res:['oil'],fact:'Millions of Pakistanis work here — and send money home to their families!'},
+ {id:'p_uk',n:'UK',e:'🇬🇧',x:150,y:180,r:14,cont:'Far buyer',res:[],fact:'Loves Basmati rice, pink salt and Sialkot footballs!'},
+ {id:'p_usa',n:'USA',e:'🇺🇸',x:130,y:120,r:14,cont:'Far buyer',res:[],fact:'Big buyer of Pakistani textiles and rice.'},
+ {id:'p_kenya',n:'Kenya',e:'🇰🇪',x:270,y:430,r:12,cont:'Tea friend',res:['tea'],fact:'Grows the tea in Pakistan\u2019s cups — 6000 km by ship!'},
+ {id:'p_malaysia',n:'Malaysia',e:'🇲🇾',x:640,y:400,r:12,cont:'Palm oil',res:[],fact:'Ships palm oil for cooking, and many workers come from Pakistan.'},
+];
+const PAK_MISSIONS=[
+ {txt:'⛽ Petrol pumps are low — Pakistan needs <b>OIL</b>! Tap a friendly Gulf seller.',accept:['p_saudi','p_uae'],to:'karachi',why:'The Gulf sells oil to Pakistan with friendly, easy payments.'},
+ {txt:'🍲 Chai time! Pakistan\u2019s cups need <b>TEA</b> 🍵 — where does it come from?',accept:['p_kenya'],to:'karachi',why:'Kenya grows the most tea sold to Pakistan.'},
+ {txt:'⚽ The World Cup needs footballs! Tap the CITY that hand-stitches them.',accept:['sialkot'],to:'p_uk',why:'Sialkot sews balls for the whole world!'},
+ {txt:'🧂 The world\u2019s kitchens want PINK SALT! Tap the mountain of salt.',accept:['khewra'],to:'p_uk',why:'Khewra salt lamps glow in homes worldwide.'},
+ {txt:'🥭 Mango season! Tap the city of MANGOES to ship them abroad.',accept:['multan'],to:'p_uk',why:'Chaunsa mangoes are famous among Pakistanis everywhere.'},
+ {txt:'💎 New jewellery needs gems! Tap the valley of gems.',accept:['hunza'],to:'p_usa',why:'Hunza gems sparkle from mountain rocks.'},
+ {txt:'⚡ Factories need machines! Tap Pakistan\u2019s biggest trade friend.',accept:['p_china'],to:'islamabad',why:'China builds machines and power plants with Pakistan — best friends in trade.'},
+ {txt:'🍚 The UK wants fragrant <b>BASMATI RICE</b>! Tap where it ships from.',accept:['karachi','punjab'],to:'p_uk',why:'Punjab grows it, Karachi port ships it!'},
+ {txt:'👕 Clothes factories need <b>COTTON</b>! Tap the fields that grow it.',accept:['punjab'],to:'karachi',why:'Punjab + Sindh cotton becomes textiles — Pakistan\u2019s biggest export!'},
+ {txt:'🚧 India has rice too — but why is trade hard? Tap India to learn.',accept:['p_india'],to:'p_india',why:'Right: relations are hard, so both sides buy from farther friends instead.',learn:true},
+ {txt:'🧵 Surgical tools for hospitals! Tap the city that crafts them.',accept:['sialkot'],to:'p_usa',why:'Sialkot tools are in clinics around the world!'},
+ {txt:'⛰️ Copper for new wires! Tap Pakistan\u2019s giant copper mountain.',accept:['rekodiq'],to:'p_china',why:'Reko Diq copper will power the future!'},
+];
+const pakG=el('g',{id:'pakScene',style:'display:none'},svg);
+el('path',{d:'M400 70 Q460 55 520 85 Q545 110 540 140 Q560 170 525 195 Q540 225 505 250 Q510 285 470 300 Q460 340 415 355 Q370 350 350 320 Q310 320 295 285 Q280 250 305 230 Q290 195 320 175 Q305 130 350 105 Q370 75 400 70 Z',
+  class:'land',fill:'#cdeba8'},pakG);
+el('path',{d:'M240 375 Q400 340 640 470 Q450 500 240 440 Z',fill:'#bfe0ee',opacity:.8,stroke:'#9cc4d4','stroke-width':2},pakG);
+el('text',{x:430,y:445,'font-size':15,'text-anchor':'middle',fill:'#5a8ba5','font-weight':'700'},pakG).textContent='Arabian Sea';
+el('path',{d:'M470 100 Q560 105 645 120',fill:'none',stroke:'#e2574c','stroke-width':3,'stroke-dasharray':'7 6'},pakG);
+el('text',{x:555,y:95,'font-size':10,'text-anchor':'middle',fill:'#b0402f','font-weight':'700'},pakG).textContent='🛣️ Karakoram Hwy';
+const pakPods={};
+PAK_PODS.forEach(c=>{
+  const g=el('g',{class:'pod',id:'pak-'+c.id},pakG);
+  const col=c.city?'#ffd98f':'#d8c3f0';
+  el('ellipse',{cx:c.x,cy:c.y,rx:c.r+5,ry:c.r+2,fill:'rgba(40,81,107,.12)'},g);
+  el('ellipse',{cx:c.x,cy:c.y,rx:c.r,ry:c.r*.85,fill:col,stroke:'#7fa890','stroke-width':2.5},g);
+  el('text',{x:c.x,y:c.y+6,'font-size':Math.min(20,c.r+3),'text-anchor':'middle',class:'flag'},g).textContent=c.e;
+  el('text',{x:c.x,y:c.y+c.r*.85+13,'font-size':11,'text-anchor':'middle',fill:'#28516b','font-weight':'700',
+    'paint-order':'stroke','stroke':'#fffdf6','stroke-width':3},g).textContent=c.n;
+  g.addEventListener('click',()=>{audioInit();pakTap(c.id);});
+  pakPods[c.id]=g;
+});
+let pakMission=null;
+function enterPak(){
+  S.mode='pak';
+  $('mExplore').classList.remove('on');$('mMissions').classList.remove('on');
+  pakMission=null;
+  nextPakMission();
+  toast('🇵🇰 Welcome to the Pakistan trade map!');
+}
+function nextPakMission(){
+  pakMission=PAK_MISSIONS[Math.floor(R()*PAK_MISSIONS.length)];
+  S.wrong=0;
+  $('mission').classList.add('show');
+  $('mTxt').innerHTML=pakMission.txt;
+  $('mHint').classList.remove('show');
+}
+function pakTap(id){
+  const pod=PAK_PODS.find(p=>p.id===id);
+  if(!pod)return;
+  if(!pakMission){showPakCard(pod);return;}
+  if(pakMission.accept.includes(id)){
+    const m=pakMission;
+    const to=PAK_PODS.find(p=>p.id===m.to)||pod;
+    const from=m.learn?to:pod;
+    const dest=m.learn?pod:to;
+    S.coins+=5;S.missions++;save();updHud();
+    flyPak(from,dest,()=>{
+      sRight();sCoin();
+      $('rTitle').textContent=m.learn?'Exactly! 🌟':'Delivered! 🎉';
+      $('rText').innerHTML=m.why+'<br>+🪙 5 · missions: '+S.missions+' · rank: '+rank();
+      $('resOv').classList.add('show');
+      pakMission=null;
+      $('mission').classList.remove('show');
+    });
+  }else{
+    S.wrong++;sWrong();
+    shakePod('pak-'+id);
+    const h=$('mHint');
+    h.textContent=S.wrong===1
+      ?'🧭 Hint: '+(pod.city?'look for a CITY inside Pakistan 🟡':'look OUTSIDE Pakistan — a partner country 🟣')
+      :'💡 Remember: gold-yellow blobs = Pakistani places, purple blobs = partner countries!';
+    h.classList.add('show');
+  }
+}
+function showPakCard(pod){
+  sOpen();
+  $('cFlag').textContent=pod.e;
+  $('cName').textContent=pod.n;
+  $('cCont').textContent=pod.cont;
+  const row=$('cRes');row.innerHTML='';
+  (pod.res||[]).forEach(r=>{
+    const d=document.createElement('div');d.className='resChip';
+    d.innerHTML='<span>'+(RES[r]?RES[r].e:'✨')+'</span> '+(RES[r]?RES[r].n:r);
+    row.appendChild(d);
+  });
+  if(!pod.res.length)row.innerHTML='<div class="resChip">✨ Tap during missions!</div>';
+  $('cFact').textContent='✨ '+pod.fact;
+  $('cWhy').innerHTML='';
+  $('card').classList.add('show');
+}
+function flyPak(a,b,done){
+  const from={x:a.x,y:a.y},to2={x:b.x,y:b.y};
+  const mx=(from.x+to2.x)/2,my=Math.min(from.y,to2.y)-60;
+  sPlane();
+  const trail=el('path',{d:'M'+from.x+' '+from.y+' Q'+mx+' '+my+' '+to2.x+' '+to2.y,fill:'none',
+    stroke:'#e2574c','stroke-width':2.5,'stroke-dasharray':'6 7',opacity:.85},pakG);
+  const pl=el('text',{'font-size':'22'},pakG);pl.textContent='✈️';
+  let t=0;
+  const iv=setInterval(()=>{
+    t+=.02;
+    const x=(1-t)*(1-t)*from.x+2*(1-t)*t*mx+t*t*to2.x;
+    const y=(1-t)*(1-t)*from.y+2*(1-t)*t*my+t*t*to2.y;
+    pl.setAttribute('x',x);pl.setAttribute('y',y+8);
+    if(t>=1){
+      clearInterval(iv);pl.remove();
+      const pk=el('text',{x:to2.x,y:to2.y-6,'font-size':'18'},pakG);pk.textContent='📦';
+      setTimeout(()=>{trail.remove();pk.remove();done();},450);
+    }
+  },30);
+}
+function setScene(which){
+  Object.values(pods).forEach(g=>g.style.display=which==='world'?'':'none');
+  waves.forEach(w=>w.style.display=which==='world'?'':'none');
+  LANDS.forEach((l)=>{});
+  landNodes.forEach(n=>n.style.display=which==='world'?'':'none');
+  pakG.style.display=which==='pak'?'':'none';
+  view.x=0;view.y=0;view.w=1000;view.h=540;applyView();
+}
+
 /* ---------------- atlas ---------------- */
 function renderAtlas(){
   const rg=$('resGrid');rg.innerHTML='';
@@ -482,10 +678,17 @@ $('mAtlas').addEventListener('click',()=>{
   $('atlasOv').classList.add('show');
 });
 $('atlasClose').addEventListener('click',()=>{sTap();$('atlasOv').classList.remove('show');});
+$('atlasX').addEventListener('click',()=>{sTap();$('atlasOv').classList.remove('show');});
 
 /* ---------------- modes ---------------- */
+$('mPak').addEventListener('click',()=>{
+  audioInit();sTap();
+  setScene('pak');
+  enterPak();
+});
 $('mExplore').addEventListener('click',()=>{
   audioInit();sTap();
+  setScene('world');
   S.mode='explore';
   $('mExplore').classList.add('on');$('mMissions').classList.remove('on');
   $('mission').classList.remove('show');
@@ -495,6 +698,8 @@ $('mExplore').addEventListener('click',()=>{
 });
 $('mMissions').addEventListener('click',()=>{
   audioInit();sTap();
+  setScene('world');
+  S.mission=null;
   S.mode='missions';
   $('mMissions').classList.add('on');$('mExplore').classList.remove('on');
   $('card').classList.remove('show');
@@ -559,13 +764,16 @@ zIn.addEventListener('click',()=>zoomView(.8));
 zOut.addEventListener('click',()=>zoomView(1.25));
 
 /* ---------------- start ---------------- */
-$('btnStart').addEventListener('click',()=>{
+function beginGame(pak){
   audioInit();sOpen();
   $('startOv').classList.remove('show');
   S.started=true;
   updHud();
-  toast('🔎 Tap a country to discover its treasures!');
-});
+  if(pak){setScene('pak');enterPak();}
+  else toast('🔎 Tap a country to discover its treasures!');
+}
+$('btnStartW').addEventListener('click',()=>beginGame(false));
+$('btnStartP').addEventListener('click',()=>beginGame(true));
 
 /* ---------------- test hooks ---------------- */
 window.__wt={
@@ -574,6 +782,9 @@ window.__wt={
   start(){document.getElementById('btnStart').click();},
   startMission,missionTap,
   goMissions(){document.getElementById('mMissions').click();},
+  goPak(){document.getElementById('mPak').click();},
+  get pakMission(){return pakMission;},
+  pakTap,
   atlas(){document.getElementById('mAtlas').click();},
 };
 updHud();
