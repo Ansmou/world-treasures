@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#d8ecf4">
+<title>🌍 World Treasures — explore the world!</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{margin:0;overflow:hidden;font-family:'Quicksand','Segoe UI',sans-serif;color:#28516b;
+       background:#d8ecf4;display:flex;justify-content:center;align-items:center}
+  #stage{position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;
+         background:linear-gradient(180deg,#cfe8f4 0%,#d8ecf4 40%,#e6f2ec 100%)}
+  #stage::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.4;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .5 0 0 0 0 .55 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* ---------- hud ---------- */
+  #hud{position:absolute;top:calc(8px + env(safe-area-inset-top));left:10px;right:10px;z-index:20;
+       display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+  .pill{background:rgba(255,253,246,.92);border:2.5px solid #9cc4d4;border-radius:999px;
+        padding:5px 12px;font-weight:700;font-size:.82rem;color:#28516b;box-shadow:0 2px 6px rgba(30,70,100,.12)}
+  #modeBtns{position:absolute;top:calc(48px + env(safe-area-inset-top));left:10px;z-index:20;display:flex;gap:6px}
+  .mbtn{font-family:inherit;font-weight:700;font-size:.78rem;border:2.5px solid #9cc4d4;background:rgba(255,253,246,.92);
+        border-radius:999px;padding:5px 11px;color:#28516b;cursor:pointer}
+  .mbtn.on{background:#f2a33c;color:#fff;border-color:#dd8a22}
+  #rankPill{position:absolute;top:calc(48px + env(safe-area-inset-top));right:10px;z-index:20}
+
+  /* ---------- map ---------- */
+  #mapWrap{position:absolute;inset:0;overflow:hidden;z-index:5}
+  #mapSvg{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  .land{stroke:#7fa890;stroke-width:2.5}
+  .pod{cursor:pointer}
+  .pod .blob{transition:transform .15s;transform-origin:center;transform-box:fill-box}
+  .pod:active .blob{transform:scale(1.12)}
+  .pod.visited .blob{stroke:#f2a33c;stroke-width:3}
+  .pod .flag{pointer-events:none;font-family:'Quicksand','Segoe UI Emoji',sans-serif}
+  .pod .ricon{pointer-events:none}
+  .pod.target .blob{animation:tpulse 1s infinite}
+  @keyframes tpulse{0%,100%{stroke:#e2574c;stroke-width:3.5}50%{stroke:#ffd166;stroke-width:6}}
+  .wave{fill:none;stroke:#a8cfdd;stroke-width:2;stroke-linecap:round;opacity:.7}
+
+  /* ---------- country card ---------- */
+  #card{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:30;
+        width:min(92vw,360px);background:rgba(255,253,246,.97);border:3.5px solid #9cc4d4;border-radius:20px;
+        padding:12px 14px;box-shadow:0 10px 26px rgba(30,70,100,.25);display:none}
+  #card.show{display:block;animation:cardIn .25s}
+  @keyframes cardIn{from{transform:translateX(-50%) translateY(18px);opacity:0}to{transform:translateX(-50%);opacity:1}}
+  #card .head{display:flex;align-items:center;gap:9px}
+  #card .flag{font-size:2rem}
+  #card .nm{font-weight:700;font-size:1.1rem;color:#1d4258}
+  #card .cont{font-size:.68rem;font-weight:700;color:#6b93a8;letter-spacing:.5px;text-transform:uppercase}
+  #card .resRow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .resChip{display:flex;align-items:center;gap:5px;background:#eaf4f8;border:2px solid #b9d8e4;border-radius:999px;
+           padding:4px 10px;font-size:.76rem;font-weight:700;color:#28516b}
+  #card .fact{margin-top:8px;font-size:.8rem;font-weight:600;line-height:1.4;color:#4a6f85;
+              background:#fdf6e4;border-radius:12px;padding:7px 10px;border:2px dashed #e8cf9a}
+  #card .why{margin-top:6px;font-size:.72rem;font-weight:600;color:#6b93a8;line-height:1.35}
+  #cardClose{position:absolute;top:8px;right:10px;border:2px solid #9cc4d4;background:#fff;border-radius:10px;
+             font-weight:800;font-size:.85rem;padding:2px 9px;cursor:pointer;font-family:inherit;color:#28516b}
+
+  /* ---------- mission banner ---------- */
+  #mission{position:absolute;left:50%;top:calc(92px + env(safe-area-inset-top));transform:translateX(-50%);
+           z-index:25;width:min(92vw,360px);background:rgba(255,253,246,.97);border:3.5px solid #f2a33c;
+           border-radius:18px;padding:10px 13px;box-shadow:0 8px 20px rgba(30,70,100,.2);display:none}
+  #mission.show{display:block}
+  #mission .mtxt{font-size:.86rem;font-weight:700;line-height:1.35;color:#1d4258}
+  #mission .mtxt b{color:#d1491f}
+  #mission .hint{margin-top:5px;font-size:.74rem;font-weight:700;color:#b06a1a;background:#fdf0dc;
+                 border-radius:10px;padding:5px 9px;display:none}
+  #mission .hint.show{display:block}
+
+  /* ---------- atlas ---------- */
+  #atlasOv{position:absolute;inset:0;background:rgba(30,70,100,.5);display:none;align-items:center;justify-content:center;z-index:40;padding:14px}
+  #atlasOv.show{display:flex}
+  #atlasCard{background:#fffdf6;border:3.5px solid #9cc4d4;border-radius:22px;width:min(94vw,380px);
+             max-height:90vh;overflow-y:auto;padding:16px 14px}
+  #atlasCard h1{margin:0 0 2px;font-size:1.15rem;color:#1d4258;text-align:center}
+  #atlasCard .pct{text-align:center;font-weight:700;color:#6b93a8;font-size:.78rem;margin-bottom:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:7px}
+  .stick{border:2.5px solid #cfe2ea;border-radius:14px;background:#fff;text-align:center;padding:7px 3px;opacity:.42}
+  .stick.on{opacity:1;border-color:#f2a33c;background:#fff9ec}
+  .stick .ic{font-size:1.5rem}
+  .stick .nm{font-size:.54rem;font-weight:700;color:#28516b;line-height:1.1;margin-top:2px}
+  .stick.cnty .ic{font-size:1.4rem}
+  .sect{font-size:.7rem;font-weight:700;color:#6b93a8;letter-spacing:1px;text-transform:uppercase;margin:10px 0 5px}
+  #atlasClose{display:block;margin:12px auto 0;font-family:inherit;font-weight:700;font-size:.9rem;border:none;
+        border-radius:999px;padding:9px 22px;background:linear-gradient(180deg,#f2a33c,#dd8a22);color:#fff;
+        cursor:pointer;box-shadow:0 4px 0 #b06a1a}
+
+  /* ---------- overlays ---------- */
+  .ov{position:absolute;inset:0;background:rgba(30,70,100,.55);display:none;align-items:center;justify-content:center;
+      z-index:50;padding:16px}
+  .ov.show{display:flex}
+  .card{background:#fffdf6;border:3.5px solid #9cc4d4;border-radius:22px;max-width:340px;width:100%;
+        padding:18px 16px 16px;text-align:center;max-height:92vh;overflow-y:auto}
+  .card h1{margin:0 0 4px;font-size:1.25rem;color:#1d4258}
+  .card p{margin:5px 0;font-size:.84rem;font-weight:600;line-height:1.45;color:#4a6f85}
+  .card button{font-family:inherit;font-weight:700;font-size:.95rem;border:none;border-radius:999px;
+        padding:10px 22px;background:linear-gradient(180deg,#f2a33c,#dd8a22);color:#fff;cursor:pointer;
+        box-shadow:0 4px 0 #b06a1a;margin:6px 3px 0}
+  .card button.green{background:linear-gradient(180deg,#9db38f,#6f9c62);box-shadow:0 4px 0 #4f7a44}
+  .card button:active{transform:translateY(3px);box-shadow:0 1px 0 #b06a1a}
+  #toast{position:absolute;left:50%;top:44%;transform:translateX(-50%);z-index:45;display:none;
+         background:#fffdf6;border:3px solid #f2a33c;border-radius:16px;padding:10px 18px;
+         font-weight:700;color:#1d4258;font-size:.9rem;text-align:center;box-shadow:0 8px 20px rgba(30,70,100,.3);max-width:86%}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="mapWrap"><svg id="mapSvg" viewBox="0 0 1000 540" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg></div>
+
+  <div id="hud">
+    <span class="pill">🪙 <span id="coinTxt">0</span></span>
+    <span class="pill">🎯 <span id="misTxt">0</span> done</span>
+    <span class="pill" id="rankPill2">🥉 Explorer</span>
+  </div>
+  <div id="modeBtns">
+    <button class="mbtn on" id="mExplore">🔎 Explore</button>
+    <button class="mbtn" id="mMissions">🎯 Missions</button>
+    <button class="mbtn" id="mAtlas">📖 Atlas</button>
+  </div>
+
+  <div id="mission">
+    <div class="mtxt" id="mTxt"></div>
+    <div class="hint" id="mHint"></div>
+  </div>
+
+  <div id="card">
+    <button id="cardClose">✕</button>
+    <div class="head"><div class="flag" id="cFlag">🌍</div>
+      <div><div class="nm" id="cName">Country</div><div class="cont" id="cCont">continent</div></div></div>
+    <div class="resRow" id="cRes"></div>
+    <div class="fact" id="cFact"></div>
+    <div class="why" id="cWhy"></div>
+  </div>
+
+  <div id="atlasOv">
+    <div id="atlasCard">
+      <h1>📖 My Atlas</h1>
+      <div class="pct" id="atlasPct"></div>
+      <div class="sect">Treasures discovered</div>
+      <div class="grid" id="resGrid"></div>
+      <div class="sect">Countries visited</div>
+      <div class="grid" id="cntyGrid"></div>
+      <button id="atlasClose">Keep exploring!</button>
+    </div>
+  </div>
+
+  <div class="ov show" id="startOv">
+    <div class="card">
+      <h1>🌍 WORLD TREASURES</h1>
+      <p>Every country hides treasures — oil, gold, coffee, diamonds, sunshine!<br><b>Tap any country</b> to learn what it gives the world.</p>
+      <p>🔎 <b>Explore</b> — collect treasures in your Atlas 📖<br>🎯 <b>Missions</b> — help countries find the treasures they need and win 🪙</p>
+      <p>Can you light up the whole atlas? 🌟</p>
+      <button id="btnStart">▶ START EXPLORING</button>
+    </div>
+  </div>
+
+  <div class="ov" id="resOv">
+    <div class="card">
+      <h1 id="rTitle">Delivered! 🎉</h1>
+      <p id="rText"></p>
+      <button id="rNext" class="green">Next mission ➜</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+<script>
+(function(){
+'use strict';
+window.__errs=[];
+window.onerror=(m,s,l)=>{window.__errs.push(m+' @'+l);};
+const $=id=>document.getElementById(id);
+const SVGNS='http://www.w3.org/2000/svg';
+const R=Math.random;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function el(tag,attrs,parent){const n=document.createElementNS(SVGNS,tag);for(const k in attrs)n.setAttribute(k,attrs[k]);parent.appendChild(n);return n;}
+
+/* ---------------- resources ---------------- */
+const RES={
+  oil:{n:'Oil',e:'🛢️',why:'Black gold from deep underground — it powers cars and planes, and even makes plastic!'},
+  gas:{n:'Natural Gas',e:'🔥',why:'Clean-belling fuel that cooks food and warms homes in winter.'},
+  coal:{n:'Coal',e:'🪨',why:'A fuel made from forests that lived 300 million years ago!'},
+  uranium:{n:'Uranium',e:'⚛️',why:'A tiny pellet of it can power a whole city — in special power plants.'},
+  sun:{n:'Sunshine',e:'☀️',why:'Deserts collect free sunshine and turn it into electricity!'},
+  wind:{n:'Wind',e:'🌬️',why:'Wind farms on hills and seas make clean power.'},
+  iron:{n:'Iron Ore',e:'🔗',why:'The metal inside buildings, bridges, trains and cars.'},
+  copper:{n:'Copper',e:'🟠',why:'The orange metal inside all electric wires — it carries power!'},
+  gold:{n:'Gold',e:'🟡',why:'Shiny, never rusts — jewellery and bank vaults love it.'},
+  lithium:{n:'Lithium',e:'🔋',why:'The light metal inside phone and electric-car batteries.'},
+  wheat:{n:'Wheat',e:'🌾',why:'Grinds into flour for bread, pasta and cakes.'},
+  rice:{n:'Rice',e:'🍚',why:'Dinner for more than half the people on Earth!'},
+  coffee:{n:'Coffee',e:'☕',why:'Grown on mountain farms — it wakes up the whole world.'},
+  cocoa:{n:'Cocoa',e:'🍫',why:'The beans that become CHOCOLATE!'},
+  diamonds:{n:'Diamonds',e:'💎',why:'The hardest material on Earth — sparkle from deep underground.'},
+  rubber:{n:'Rubber',e:'🛞',why:'From tree sap! Tyres, balls and boots are made from it.'},
+  fish:{n:'Fish',e:'🐟',why:'Protein from the seas — one of the healthiest foods.'},
+  water:{n:'Fresh Water',e:'💧',why:'The most precious treasure of all — we drink it and grow crops with it.'},
+  silver:{n:'Silver',e:'🥈',why:'Shiny metal for jewellery, mirrors and electronics.'},
+  wool:{n:'Wool',e:'🐑',why:'Warm winter clothes begin as fluffy sheep coats!'},
+};
+
+/* ---------------- countries (picture-book pods) ---------------- */
+/* x,y on a 1000x540 canvas, w=h blob size, res list, fact */
+const C=[
+ {id:'canada',n:'Canada',f:'🇨🇦',x:180,y:88,r:26,cont:'North America',res:['water','uranium','oil'],fact:'Canada has more lakes than the rest of the world combined — a fifth of all fresh water!'},
+ {id:'usa',n:'USA',f:'🇺🇸',x:185,y:150,r:25,cont:'North America',res:['oil','gas','silver'],fact:'Texas pumps so much oil it would be a top-5 country on its own!'},
+ {id:'mexico',n:'Mexico',f:'🇲🇽',x:160,y:212,r:17,cont:'North America',res:['silver','oil'],fact:'Mexican silver mines have shined since pirate times — still world #1!'},
+ {id:'brazil',n:'Brazil',f:'🇧🇷',x:312,y:302,r:24,cont:'South America',res:['coffee','iron','water'],fact:'The Amazon rainforest is so big it makes its own rain!'},
+ {id:'argentina',n:'Argentina',f:'🇦🇷',x:300,y:390,r:19,cont:'South America',res:['lithium','wheat'],fact:'Argentina sits on the "Lithium Triangle" — salt flats full of battery metal!'},
+ {id:'chile',n:'Chile',f:'🇨🇱',x:268,y:382,r:13,cont:'South America',res:['copper','lithium'],fact:'Chile mines a THIRD of the world\u2019s copper — the wires in your house!'},
+ {id:'peru',n:'Peru',f:'🇵🇪',x:266,y:305,r:14,cont:'South America',res:['copper','fish'],fact:'Peru\u2019s cold ocean currents feed some of the richest fishing waters on Earth.'},
+ {id:'colombia',n:'Colombia',f:'🇨🇴',x:252,y:262,r:14,cont:'South America',res:['coffee','oil'],fact:'Colombian coffee grows on Andes mountainsides, hand-picked like cherries!'},
+ {id:'uk',n:'United Kingdom',f:'🇬🇧',x:452,y:104,r:13,cont:'Europe',res:['wind','fish'],fact:'UK seas host some of the world\u2019s biggest wind farms — turbines taller than skyscrapers!'},
+ {id:'norway',n:'Norway',f:'🇳🇴',x:487,y:66,r:14,cont:'Europe',res:['fish','gas'],fact:'Norwegian fjords are so deep that salmon farms float like giant rings!'},
+ {id:'france',n:'France',f:'🇫🇷',x:462,y:142,r:15,cont:'Europe',res:['wheat','wind'],fact:'France bakes billions of baguettes a year — all from French wheat!'},
+ {id:'ukraine',n:'Ukraine',f:'🇺🇦',x:545,y:120,r:16,cont:'Europe',res:['wheat','sun'],fact:'Ukraine\u2019s sunflower fields are so vast they look like a golden sea!'},
+ {id:'russia',n:'Russia',f:'🇷🇺',x:690,y:80,r:30,cont:'Europe & Asia',res:['gas','oil','wheat'],fact:'Russia is SO big it spans 11 time zones — gas flows west, wheat sails south!'},
+ {id:'kazakhstan',n:'Kazakhstan',f:'🇰🇿',x:650,y:135,r:17,cont:'Asia',res:['uranium'],fact:'Kazakhstan leads the world in uranium — dug from steppe grasslands!'},
+ {id:'turkey',n:'Turkey',f:'🇹🇷',x:553,y:168,r:13,cont:'Asia',res:['wool','gold'],fact:'Turkish farmers grow a rainbow of apricots — and sun-dry them on rooftops!'},
+ {id:'saudi',n:'Saudi Arabia',f:'🇸🇦',x:588,y:205,r:18,cont:'Asia',res:['oil','sun'],fact:'Under this desert sleeps a whole ocean of oil — the Gawahar field is the biggest ever found!'},
+ {id:'qatar',n:'Qatar',f:'🇶🇦',x:604,y:192,r:9,cont:'Asia',res:['gas'],fact:'Qatar is tiny but ships the most liquid natural gas on Earth — frozen to -161°C!'},
+ {id:'egypt',n:'Egypt',f:'🇪🇬',x:537,y:195,r:15,cont:'Africa',res:['gas','fish'],fact:'Egyptians have fished the Nile for 5000 years — since the pharaohs!'},
+ {id:'nigeria',n:'Nigeria',f:'🇳🇬',x:475,y:245,r:16,cont:'Africa',res:['oil','gas'],fact:'Nigeria\u2019s Niger Delta is a maze of creeks sitting on rich oil pools.'},
+ {id:'ghana',n:'Ghana',f:'🇬🇭',x:447,y:250,r:12,cont:'Africa',res:['cocoa','gold'],fact:'Ghana was once called the Gold Coast — sailors named it after its shiny rivers!'},
+ {id:'cotedivoire',n:'Côte d\u2019Ivoire',f:'🇨🇮',x:463,y:258,r:12,cont:'Africa',res:['cocoa'],fact:'The world\u2019s #1 cocoa grower — every third chocolate bar starts here!'},
+ {id:'drc',n:'DR Congo',f:'🇨🇩',x:530,y:278,r:16,cont:'Africa',res:['copper','diamonds'],fact:'Congo\u2019s rainforest is the second largest on Earth — bigger than Alaska!'},
+ {id:'ethiopia',n:'Ethiopia',f:'🇪🇹',x:580,y:228,r:14,cont:'Africa',res:['coffee'],fact:'Coffee was DISCOVERED here — a goat herder saw his goats dancing after eating red berries!'},
+ {id:'southafrica',n:'South Africa',f:'🇿🇦',x:528,y:372,r:15,cont:'Africa',res:['gold','diamonds'],fact:'Almost HALF of all gold ever mined came out of South African mines!'},
+ {id:'botswana',n:'Botswana',f:'🇧🇼',x:510,y:352,r:12,cont:'Africa',res:['diamonds'],fact:'Botswana\u2019s diamonds pay for school and doctors — a poor land that struck it rich!'},
+ {id:'morocco',n:'Morocco',f:'🇲🇦',x:432,y:190,r:12,cont:'Africa',res:['fish'],fact:'Morocco\u2019s Atlantic coast is so windy that kitesurfers fly without waves!'},
+ {id:'india',n:'India',f:'🇮🇳',x:668,y:222,r:20,cont:'Asia',res:['rice','wheat','iron'],fact:'India grows rice the clever way — terraces step down whole mountains!'},
+ {id:'china',n:'China',f:'🇨🇳',x:730,y:172,r:24,cont:'Asia',res:['rice','gold','wheat'],fact:'China feeds 1 in 5 humans with just 1 in 12 of the world\u2019s farmland!'},
+ {id:'thailand',n:'Thailand',f:'🇹🇭',x:742,y:250,r:13,cont:'Asia',res:['rice','rubber'],fact:'Thai farmers march ducks into rice fields — the ducks eat pests for lunch!'},
+ {id:'vietnam',n:'Vietnam',f:'🇻🇳',x:762,y:242,r:12,cont:'Asia',res:['coffee','rice'],fact:'Vietnam is coffee world champion #2 — famous for smooth, chocolatey beans!'},
+ {id:'malaysia',n:'Malaysia',f:'🇲🇾',x:745,y:275,r:12,cont:'Asia',res:['rubber'],fact:'Rubber trees originally lived ONLY in Brazil — seeds were smuggled to Asia in 1876!'},
+ {id:'indonesia',n:'Indonesia',f:'🇮🇩',x:782,y:292,r:16,cont:'Asia',res:['coal','fish'],fact:'Indonesia is 17,000 islands — fishermen sail between volcanoes!'},
+ {id:'japan',n:'Japan',f:'🇯🇵',x:850,y:190,r:13,cont:'Asia',res:['fish'],fact:'Japan\u2019s fish markets auction tuna faster than you can say "sushi"!'},
+ {id:'australia',n:'Australia',f:'🇦🇺',x:820,y:330,r:22,cont:'Oceania',res:['iron','lithium','gold'],fact:'The outback is RED because the dust is full of iron — Australia ships it to build the world!'},
+ {id:'newzealand',n:'New Zealand',f:'🇳🇿',x:895,y:395,r:12,cont:'Oceania',res:['wool','fish'],fact:'New Zealand has more SHEEP than people — about five each!'},
+];
+const CONT_COL={'North America':'#a8d86f','South America':'#ffd98f','Europe':'#f2a8c0','Africa':'#f2b06a','Asia':'#9fd8d2','Oceania':'#c9b3e8','Europe & Asia':'#9fd8d2'};
+
+/* ---------------- state ---------------- */
+const S={started:false,mode:'explore',coins:0,missions:0,visited:{},found:{},
+         mission:null,wrong:0,lastDist:null,planeAnim:null};
+const RANKS=[[0,'🥉 Explorer'],[5,'🥈 Pathfinder'],[12,'🥇 Globetrotter'],[20,'🏆 Treasure Master'],[30,'👑 World Wonder']];
+function rank(){let r=RANKS[0][1];RANKS.forEach(([n,t])=>{if(S.missions>=n)r=t;});return r;}
+function save(){try{localStorage.setItem('worldTreasures',JSON.stringify(
+  {coins:S.coins,missions:S.missions,visited:S.visited,found:S.found}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem('worldTreasures'));
+  if(d){S.coins=d.coins||0;S.missions=d.missions||0;S.visited=d.visited||{};S.found=d.found||{};}}catch(e){}}
+load();
+
+/* ---------------- audio ---------------- */
+let AC=null,master=null;
+function audioInit(){
+  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();
+    master=AC.createGain();master.gain.value=.5;master.connect(AC.destination);}catch(e){return null;}}
+  if(AC.state==='suspended')AC.resume();
+  return AC;
+}
+function tone(f,dur,type='sine',vol=.22,when=0,glide){
+  const ac=audioInit();if(!ac)return;
+  const t=ac.currentTime+when,o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);
+  if(glide)o.frequency.exponentialRampToValueAtTime(glide,t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.05);
+}
+const sTap=()=>tone(600,.05,'triangle',.16);
+const sOpen=()=>{tone(523,.09,'sine',.2);tone(659,.12,'sine',.2,.08);};
+const sRight=()=>{tone(659,.1,'sine',.25);tone(784,.1,'sine',.25,.09);tone(1047,.2,'sine',.28,.18);};
+const sWrong=()=>tone(220,.18,'sine',.18,0,160);
+const sCoin=()=>{tone(988,.07,'triangle',.2);tone(1319,.12,'triangle',.2,.07);};
+const sPlane=()=>tone(240,.9,'sawtooth',.08,0,520);
+
+/* ---------------- map build ---------------- */
+const svg=$('mapSvg');
+/* soft continent blobs (picture-book) */
+const LANDS=[
+ ['North America','M120 60 Q180 20 260 45 Q305 60 300 95 Q330 130 290 160 Q300 200 250 215 Q215 235 185 210 Q140 225 120 185 Q85 150 105 120 Q90 80 120 60 Z','#b8e08a'],
+ ['South America','M240 245 Q285 230 310 255 Q330 275 322 300 Q318 330 300 355 Q293 395 272 420 Q258 438 246 420 Q240 390 247 355 Q235 320 238 290 Q228 265 240 245 Z','#ffe3a8'],
+ ['Europe+Asia','M430 60 Q520 25 620 45 Q740 30 860 60 Q930 85 905 120 Q935 150 880 170 Q895 200 840 205 Q820 235 780 235 Q760 265 720 260 Q690 285 655 270 Q620 290 590 265 Q560 280 540 255 Q500 260 480 235 Q440 240 430 215 Q400 190 425 165 Q405 120 430 60 Z','#aee3dd'],
+ ['Africa','M420 175 Q480 155 540 175 Q575 190 585 225 Q605 260 580 295 Q575 340 545 370 Q520 400 490 385 Q455 380 440 350 Q405 320 415 280 Q395 235 420 175 Z','#ffc98a'],
+ ['Australia','M770 300 Q830 285 880 310 Q910 335 885 360 Q860 390 815 385 Q770 385 755 355 Q745 325 770 300 Z','#d8c3f0'],
+];
+LANDS.forEach(([id,d,col])=>el('path',{d,class:'land',fill:col},svg));
+/* ocean waves */
+for(let i=0;i<16;i++){
+  const x=30+R()*940,y=30+R()*480;
+  if(y>60&&y<470&&R()<.6)el('path',{d:`M${x} ${y} q8 -5 16 0 q8 5 16 0`,class:'wave'},svg);
+}
+/* country pods */
+const pods={};
+C.forEach(c=>{
+  const g=el('g',{class:'pod',id:'pod-'+c.id},svg);
+  el('ellipse',{cx:c.x,cy:c.y,rx:c.r+6,ry:c.r+3,fill:'rgba(40,81,107,.15)'},g); // soft shadow
+  el('ellipse',{cx:c.x,cy:c.y,rx:c.r,ry:c.r*.82,fill:CONT_COL[c.cont],stroke:'#7fa890','stroke-width':2.5},g);
+  el('text',{x:c.x,y:c.y+6,'font-size':Math.min(20,c.r+2),'text-anchor':'middle',class:'flag'},g).textContent=c.f;
+  // tiny resource icons on the pod
+  const n=c.res.length;
+  c.res.forEach((r,i)=>{
+    const a=-Math.PI/2+(i-(n-1)/2)*.55;
+    const ix=c.x+Math.cos(a)*(c.r+11),iy=c.y+Math.sin(a)*(c.r*.82+9);
+    el('circle',{cx:ix,cy:iy,r:7,fill:'#fffdf6',stroke:'#d9b98a','stroke-width':1.5},g);
+    const t=el('text',{x:ix,y:iy+4,'font-size':9,'text-anchor':'middle',class:'ricon'},g);
+    t.textContent=RES[r].e;
+  });
+  g.addEventListener('click',()=>{audioInit();tapCountry(c.id);});
+  pods[c.id]=g;
+});
+/* plane + trail layer */
+const planeLayer=el('g',{},svg);
+
+/* ---------------- explore ---------------- */
+function tapCountry(id){
+  const c=C.find(x=>x.id===id);
+  if(!c)return;
+  if(S.mode==='explore')showCard(c);
+  else if(S.mode==='missions'&&S.mission)missionTap(c);
+  else showCard(c);
+}
+function showCard(c){
+  sOpen();
+  $('cFlag').textContent=c.f;
+  $('cName').textContent=c.n;
+  $('cCont').textContent=c.cont;
+  const row=$('cRes');row.innerHTML='';
+  c.res.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='resChip';
+    d.innerHTML=`<span>${RES[r].e}</span> ${RES[r].n}${S.found[r]?' ✓':''}`;
+    row.appendChild(d);
+  });
+  $('cFact').textContent='✨ '+c.fact;
+  $('cWhy').innerHTML=c.res.map(r=>`<b>${RES[r].n}</b>: ${RES[r].why}`).join('<br>');
+  $('card').classList.add('show');
+  if(!S.visited[c.id]){
+    S.visited[c.id]=true;
+    c.res.forEach(r=>S.found[r]=true);
+    save();updHud();renderAtlas();
+    pods[c.id].classList.add('visited');
+    toast(`📍 ${c.n} added to your Atlas! +${c.res.length} treasure${c.res.length>1?'s':''}`);
+    sCoin();
+  }
+}
+$('cardClose').addEventListener('click',()=>{sTap();$('card').classList.remove('show');});
+
+/* ---------------- missions ---------------- */
+const MISSIONS=[
+ {res:'wheat',who:'🇫🇷 France',why:'France\u2019s bakeries need flour for baguettes!'},
+ {res:'wheat',who:'🇪🇹 Ethiopia',why:'injera flatbread needs wheat!'},
+ {res:'rice',who:'🇯🇵 Japan',why:'sushi chefs need rice!'},
+ {res:'coffee',who:'🇮🇹 Italy',why:'Italy ran out of espresso beans!'},
+ {res:'cocoa',who:'🇨🇭 Switzerland',why:'the chocolate factories need cocoa!'},
+ {res:'cocoa',who:'🇧🇪 Belgium',why:'Belgian pralines need cocoa!'},
+ {res:'oil',who:'🇯🇵 Japan',why:'Japan\u2019s cars and factories need oil!'},
+ {res:'gas',who:'🇩🇪 Germany',why:'German homes are cold — they need gas!'},
+ {res:'copper',who:'🇩🇪 Germany',why:'factories need copper wire!'},
+ {res:'copper',who:'🇨🇳 China',why:'China\u2019s new cities need copper wires!'},
+ {res:'iron',who:'🇰🇷 South Korea',why:'shipyards need iron for giant ships!'},
+ {res:'gold',who:'🇮🇳 India',why:'wedding season needs golden jewellery!'},
+ {res:'lithium',who:'🇯🇵 Japan',why:'battery factories need lithium!'},
+ {res:'lithium',who:'🇩🇪 Germany',why:'electric car plants need lithium!'},
+ {res:'uranium',who:'🇫🇷 France',why:'power plants need uranium fuel!'},
+ {res:'diamonds',who:'🇮🇳 India',why:'royal jewellers need diamonds!'},
+ {res:'rubber',who:'🇩🇪 Germany',why:'the car factories need rubber tyres!'},
+ {res:'fish',who:'🇪🇸 Spain',why:'paella kitchens need fish!'},
+ {res:'sun',who:'🇩🇪 Germany',why:'solar farms want desert sunshine know-how!'},
+ {res:'wind',who:'🇳🇱 Netherlands',why:'Dutch windmills want windy friends!'},
+ {res:'silver',who:'🇹🇷 Turkey',why:'jewellers need silver!'},
+ {res:'wool',who:'🇬🇧 United Kingdom',why:'winter is coming — we need wool!'},
+ {res:'water',who:'🇪🇬 Egypt',why:'the desert kingdom needs fresh water!'},
+ {res:'coal',who:'🇮🇳 India',why:'power stations need coal!'},
+];
+function startMission(){
+  const m=MISSIONS[Math.floor(R()*MISSIONS.length)];
+  S.mission=m;S.wrong=0;S.lastDist=null;
+  $('mission').classList.add('show');
+  $('mTxt').innerHTML=`📦 ${m.who} needs <b>${RES[m.res].n}</b> ${RES[m.res].e}!<br>${m.why}<br><b>Tap a country that has it!</b>`;
+  const h=$('mHint');h.classList.remove('show');
+}
+function missionTap(c){
+  const m=S.mission;
+  const ok=c.res.includes(m.res);
+  if(ok){
+    S.coins+=5;S.missions++;
+    save();updHud();
+    flyPlane(c,m.who,()=>{
+      sRight();sCoin();
+      $('rTitle').textContent='Delivered! 🎉';
+      $('rText').innerHTML=`${c.f} <b>${c.n}</b> → ${m.who}<br>${RES[m.res].e} ${RES[m.res].n} delivered!<br>+🪙 5 · missions: ${S.missions} · rank: ${rank()}`;
+      $('resOv').classList.add('show');
+      S.mission=null;
+      $('mission').classList.remove('show');
+    });
+  }else{
+    S.wrong++;
+    sWrong();
+    shakePod(c.id);
+    const h=$('mHint');
+    const cand=C.filter(x=>x.res.includes(m.res));
+    const conts=[...new Set(cand.map(x=>x.cont))];
+    const dist=Math.min(...cand.map(x=>Math.hypot(x.x-c.x,x.y-c.y)));
+    let msg;
+    if(S.wrong===1)msg=`Hint: look in ${conts.join(' or ')} 🧭`;
+    else{
+      if(S.lastDist!==null)msg=dist<S.lastDist?'🔥 Getting WARMER! Keep going this way!':'❄️ Colder… try a different direction!';
+      else msg=`Hint: ${conts.join(' or ')} 🧭`;
+    }
+    S.lastDist=dist;
+    h.textContent=msg;h.classList.add('show');
+  }
+}
+function shakePod(id){
+  const g=pods[id];
+  g.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:250});
+}
+$('rNext').addEventListener('click',()=>{
+  sTap();$('resOv').classList.remove('show');
+  if(S.mode==='missions')startMission();
+});
+function flyPlane(c,whoEmoji,done){
+  // requester country (parse name from emoji string is fragile) → use nearest country with matching flag emoji
+  const who=C.find(x=>whoEmoji.includes(x.f));
+  const to=who||C.find(x=>x.id==='france');
+  const from={x:c.x,y:c.y},to2={x:to.x,y:to.y};
+  const mx=(from.x+to2.x)/2,my=Math.min(from.y,to2.y)-70;
+  sPlane();
+  const trail=el('path',{d:`M${from.x} ${from.y} Q${mx} ${my} ${to2.x} ${to2.y}`,fill:'none',
+    stroke:'#e2574c','stroke-width':2.5,'stroke-dasharray':'6 7',opacity:.85},planeLayer);
+  const pl=el('text',{'font-size':'22'},planeLayer);pl.textContent='✈️';
+  let t=0;
+  const iv=setInterval(()=>{
+    t+=.016;
+    if(t>=1){t=1;}
+    const x=(1-t)*(1-t)*from.x+2*(1-t)*t*mx+t*t*to2.x;
+    const y=(1-t)*(1-t)*from.y+2*(1-t)*t*my+t*t*to2.y;
+    pl.setAttribute('x',x);pl.setAttribute('y',y+8);
+    pl.setAttribute('transform',`rotate(${Math.atan2(to2.y-from.y-(my*0), to2.x-from.x)*0} 0 0)`);
+    if(t>=1){
+      clearInterval(iv);
+      pl.remove();
+      // parcel drop
+      const pk=el('text',{x:to2.x,y:to2.y-6,'font-size':'18'},planeLayer);pk.textContent='📦';
+      setTimeout(()=>{trail.remove();pk.remove();done();},500);
+    }
+  },30);
+}
+
+/* ---------------- atlas ---------------- */
+function renderAtlas(){
+  const rg=$('resGrid');rg.innerHTML='';
+  Object.entries(RES).forEach(([id,r])=>{
+    const on=!!S.found[id];
+    const d=document.createElement('div');
+    d.className='stick'+(on?' on':'');
+    d.innerHTML=`<div class="ic">${r.e}</div><div class="nm">${r.n}</div>`;
+    rg.appendChild(d);
+  });
+  const cg=$('cntyGrid');cg.innerHTML='';
+  C.forEach(c=>{
+    const on=!!S.visited[c.id];
+    const d=document.createElement('div');
+    d.className='stick cnty'+(on?' on':'');
+    d.innerHTML=`<div class="ic">${c.f}</div><div class="nm">${c.n}</div>`;
+    cg.appendChild(d);
+  });
+  const pct=Math.round((Object.keys(S.visited).length/C.length)*100);
+  $('atlasPct').textContent=`🌍 ${Object.keys(S.visited).length}/${C.length} countries · ${pct}% · ${Object.keys(S.found).length}/${Object.keys(RES).length} treasures`;
+}
+$('mAtlas').addEventListener('click',()=>{
+  audioInit();sOpen();
+  renderAtlas();
+  $('atlasOv').classList.add('show');
+});
+$('atlasClose').addEventListener('click',()=>{sTap();$('atlasOv').classList.remove('show');});
+
+/* ---------------- modes ---------------- */
+$('mExplore').addEventListener('click',()=>{
+  audioInit();sTap();
+  S.mode='explore';
+  $('mExplore').classList.add('on');$('mMissions').classList.remove('on');
+  $('mission').classList.remove('show');
+  $('card').classList.remove('show');
+  Object.values(pods).forEach(p=>p.classList.remove('target'));
+  toast('🔎 Tap any country to explore!');
+});
+$('mMissions').addEventListener('click',()=>{
+  audioInit();sTap();
+  S.mode='missions';
+  $('mMissions').classList.add('on');$('mExplore').classList.remove('on');
+  $('card').classList.remove('show');
+  if(!S.mission)startMission();
+  else $('mission').classList.add('show');
+});
+
+/* ---------------- misc ---------------- */
+function toast(html){
+  const t=$('toast');
+  t.innerHTML=html;t.style.display='block';
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>t.style.display='none',2400);
+}
+function updHud(){
+  $('coinTxt').textContent=S.coins;
+  $('misTxt').textContent=S.missions;
+  $('rankPill2').textContent=rank();
+}
+/* restore visited highlights */
+C.forEach(c=>{if(S.visited[c.id])pods[c.id].classList.add('visited');});
+
+/* pan/zoom (drag + pinch simplified: buttons) */
+let vx=0,vy=0,zoom=1;
+const view={x:0,y:0,w:1000,h:540};
+function applyView(){
+  svg.setAttribute('viewBox',`${view.x} ${view.y} ${view.w} ${view.h}`);
+}
+let drag=null;
+svg.addEventListener('pointerdown',e=>{
+  drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};
+  try{svg.setPointerCapture(e.pointerId);}catch(err){}
+});
+svg.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const sc=view.w/svg.getBoundingClientRect().width;
+  view.x=clamp(drag.vx-(e.clientX-drag.x)*sc,-400,1000-view.w+400);
+  view.y=clamp(drag.vy-(e.clientY-drag.y)*sc,-300,540-view.h+300);
+  applyView();
+});
+const endDrag=e=>{drag=null;};
+svg.addEventListener('pointerup',endDrag);svg.addEventListener('pointercancel',endDrag);
+$('mapWrap').addEventListener('wheel',e=>{
+  e.preventDefault();
+  const k=e.deltaY>0?1.15:0.87;
+  zoomView(k);
+},{passive:false});
+function zoomView(k){
+  const nw=clamp(view.w*k,500,1600);
+  const nh=nw*0.54;
+  view.x+= (view.w-nw)/2; view.y+=(view.h-nh)/2;
+  view.w=nw;view.h=nh;
+  applyView();
+}
+/* zoom buttons */
+const zIn=document.createElement('button');zIn.textContent='➕';zIn.className='mbtn';
+zIn.style.cssText='position:absolute;right:10px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:22';
+const zOut=document.createElement('button');zOut.textContent='➖';zOut.className='mbtn';
+zOut.style.cssText='position:absolute;right:10px;bottom:calc(120px + env(safe-area-inset-bottom));z-index:22';
+$('stage').appendChild(zIn);$('stage').appendChild(zOut);
+zIn.addEventListener('click',()=>zoomView(.8));
+zOut.addEventListener('click',()=>zoomView(1.25));
+
+/* ---------------- start ---------------- */
+$('btnStart').addEventListener('click',()=>{
+  audioInit();sOpen();
+  $('startOv').classList.remove('show');
+  S.started=true;
+  updHud();
+  toast('🔎 Tap a country to discover its treasures!');
+});
+
+/* ---------------- test hooks ---------------- */
+window.__wt={
+  S,C,RES,MISSIONS,pods,
+  tap:tapCountry,
+  start(){document.getElementById('btnStart').click();},
+  startMission,missionTap,
+  goMissions(){document.getElementById('mMissions').click();},
+  atlas(){document.getElementById('mAtlas').click();},
+};
+updHud();
+})();
+</script>
+</body>
+</html>
